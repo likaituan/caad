@@ -1,0 +1,22 @@
+.cat-item {
+    margin-bottom: 75px;
+}
+
+.method-item {
+    margin: 25px;
+}
+
+table {
+    width: 80%;
+    border-collapse: collapse;
+}
+
+th,td{
+    padding:10px;
+    text-align: center;
+}
+
+.buttons {
+    width: 80%;
+    text-align: right;
+}

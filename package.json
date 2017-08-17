@@ -1,0 +1,20 @@
+{
+  "name": "caad",
+  "version": "1.0.0",
+  "author": "Li",
+  "description": "code as a document",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caadjs/caad.git"
+  },
+  "keywords": [
+    "code",
+    "document"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/caadjs/caad/issues"
+  },
+  "homepage": "https://github.com/caadjs/caad#readme"
+}
