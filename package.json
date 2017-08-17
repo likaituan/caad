@@ -1,12 +1,12 @@
 {
   "name": "caad",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "Li",
   "description": "code as a document",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/caadjs/caad.git"
+    "url": "git+https://github.com/likaituan/caad.git"
   },
   "keywords": [
     "code",
@@ -14,7 +14,7 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/caadjs/caad/issues"
+    "url": "https://github.com/likaituan/caad/issues"
   },
-  "homepage": "https://github.com/caadjs/caad#readme"
+  "homepage": "https://github.com/likaituan/caad#readme"
 }
