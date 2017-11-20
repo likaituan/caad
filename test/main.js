@@ -5,7 +5,7 @@
 let app = require('sys.app');
 
 app.config({
-	page: '/docs/'
+	page: '/test/'
 });
 
 app.init('home');

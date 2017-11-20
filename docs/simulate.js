@@ -20,18 +20,21 @@ var getData = function(dataType, range){
     }
 };
 
+// 模拟数据
+let simulateDataList = {
+	email: '1@qq.com',
+	password: '123456',
+	version: '1.0',
+
+	platform: 'android',
+};
+
 var getSimulate = function(dataType, range, key, defaultValue) {
     if (defaultValue) {
         return defaultValue;
     }
     if (dataType === 'Date') {
         return new Date().toISOString().split('T')[0];
-    }
-    if (key === 'email') {
-        return '1@qq.com';
-    }
-    if (key === 'password') {
-        return '123456';
     }
     if (range) {
         if (/\[(.+?)\]\-\[(.+?)\]/.test(range)) {
@@ -42,5 +45,5 @@ var getSimulate = function(dataType, range, key, defaultValue) {
         }
         return getData(dataType, range);
     }
-    return '';
+    return simulateDataList[key] || '';
 };

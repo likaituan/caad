@@ -1,50 +1,37 @@
-var fs = require('fs');
-var routers = {};
+/**
+ * Created by likaituan on 17/08/2017.
+ */
+var proxy = require('http-proxy-middleware');
 
-exports.prefixPath = '';
+let setProxy = function (app, ops) {
+	let options = {
+		target: ops.proxyTo
+	};
+	let proxyService = proxy(ops.serverPath, options);
+	app.use(proxyService);
+};
+
 
 // 读取配置并启动
-exports.start = function (app, ops) {
-	this.prefixPath = ops.forward;
-	this.readPath(ops.dir, ops.path);
-	app.all(`${ops.path}/*`, this.runTime);
-};
+exports.start = function (app, express, ops) {
+	if (typeof ops=='string') {
+		ops = {webPath: ops};
+	}
+	let webPath = ops.webPath || '';
+	app.use(`${webPath}/docs`, express.static(`${__dirname}/docs`));
+	app.use(`${webPath}/test`, express.static(`${__dirname}/test`));
+	app.use(`${webPath}/node_modules`, express.static(`./node_modules`));
+	app.use(`${webPath}/config`, express.static(`./config`));
+	app.use(`${webPath}/plugins`, express.static(`./plugins`));
 
-// 递归读取路径
-exports.readPath = function (localPath, webPath) {
-	fs.readdirSync(localPath).forEach(file => {
-		var newFile = `${localPath}/${file}`;
-		var isDir = fs.statSync(newFile).isDirectory();
-		if (isDir) {
-			return this.readPath(newFile, `${webPath}/${file}`);
+	setProxy(app, ops);
+
+	app.listen(ops.port, err => {
+		var uri = 'http://localhost:' + ops.port;
+		if (err) {
+			console.log(err);
+		} else {
+			console.log(`Node Is RunAt local env: ${uri}`);
 		}
-		var methods = require(newFile);
-		Object.entries(methods).forEach( ([key, fun]) =>{
-			routers[key] = fun;
-		});
 	});
-};
-
-// 运行时
-exports.runTime = function (req, res) {
-	var key = req.params[0];
-	var fun = routers[key];
-	if (!fun) {
-		return res.status(404).end('no this router!');
-	}
-	var params = req.query;
-	var session = {};
-	var ops = {};
-	var o = fun(params, session, req, res, ops);
-	if (o.forward) {
-		var url = `${exports.prefixPath}${o.forward.url}`;
-		console.log(`forward to ${url} by ${o.forward.type || 'get'}`);
-		if (o.success) {
-			if (typeof(o.success)==='function') {
-				o.success('ok');
-			} else {
-				res.end(o.success);
-			}
-		}
-	}
 };

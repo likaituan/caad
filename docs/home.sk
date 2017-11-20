@@ -1,0 +1,160 @@
+
+
+<template>
+    <div class="box">
+        <div>
+            <h3>温馨提示({this.totalCount}):</h3>
+            <ul>
+                <li>请求方式不限: 一般没参数的用get, 表单提交用post</li>
+                <li>所有请求地址: /service/{{interfaceCate}}/{{interfaceName}}</li>
+                <li>最新返回结果: 请以模拟提交为准</li>
+            </ul>
+        </div>
+        {foreach src=this.interfaceData item=catItem key=catName}
+        <div class="cat-item">
+            <h2>---------- {catItem.title}({catItem.count}) ----------</h2>
+            {foreach src=catItem.methods item=item key=itemIndex}
+            <% let reItem = this.reData.filter(x=>x.url===item.url)[0]||{}; %>
+            <div class="method-item">
+                <form name="{item.url}">
+                    <div style="background:#aaa;">
+                        <span>{item.url}</span> --- <b>{item.title}</b>
+                    </div>
+                    <p>参数列表:</p>
+                    <% let args = item.args || []; %>
+                    {if args.length>0}
+                    <table border="1">
+                        <tr>
+                            <th>Field Name</th>
+                            <th>Field Type</th>
+                            <th>Field Range</th>
+                            <th>Is Required</th>
+                            <th>Description</th>
+                            <th>Default Value</th>
+                        </tr>
+                        {foreach src=args item=arg}
+                        <tr>
+                            <td>{arg.name}</td>
+                            <td>{arg.type}</td>
+                            <td>{arg.range || ''}</td>
+                            <td>{arg.isRequired}</td>
+                            <td>{arg.title}</td>
+                            <td><input type="text" name="{arg.name}" value="{arg.defaultValue||''}" /></td>
+                        </tr>
+                        {/foreach}
+                    </table>
+                    {else}
+                    <i>no params</i>
+                    {/if}
+                    <p class="buttons">
+                        {if args.length>0&&reItem.params}
+                        <input type="button" data-event="simulateData:{catName},{itemIndex}" value="模拟数据" />
+                        {/if}
+                        <input type="button" data-event="simulateSubmit:{catName},{itemIndex}" value="模拟提交" />
+                    </p>
+                    <p>返回结果:</p>
+                    <pre><code class="lang-javascript">{JSON.stringify(reItem.res,null,4)}</code></pre>
+                </form>
+            </div>
+            {/foreach}
+            {if catItem.methods.length===0}
+            <p style="color:red;">开发中, 待完善...</p>
+            {/if}
+        </div>
+        {/foreach}
+    </div>
+</template>
+
+<script type="text/ecmascript-6">
+
+let ajax = require('sys.ajax');
+let getHeaders = require('/plugins/getHeaders');
+
+exports.onInit = async function (done) {
+    this.reData = await ajax.get('/config/req-res.json');
+    let data = await ajax.get('/config/caad.json');
+    if (data.title) {
+        document.title = data.title;
+    }
+    this.interfaceData = data.interfaces;
+    this.totalCount = Object.values(this.interfaceData).map(x=>x.methods.length).reduce((a,b)=>a+b);
+    done();
+};
+
+exports.onRender = async function () {
+	[...document.querySelectorAll('pre code')].forEach(block => {
+		hljs.highlightBlock(block);
+	});
+};
+
+///service/contract/getSign
+// 模拟表单提交返回二进制
+let submitForm = function (options) {
+	let form = document.body.querySelector('form#src_form');
+	form.action = options.url;
+	Object.keys(options.data).forEach(key => {
+		let input = document.createElement('input');
+		input.name = key;
+		input.value = options.data[key];
+		form.appendChild(input);
+	});
+	console.log(form.innerHTML);
+	form.submit();
+	form.innerHTML = '';
+};
+
+// 模拟数据
+exports.simulateData = function (cat, index){
+    let item = this.interfaceData[cat].methods[index];
+    let reItem = this.reData.filter(x=>x.url===item.url)[0] || {};
+    let form = document.forms[item.url];
+    let elements = form.elements;
+    let params = reItem.params;
+    item.args.forEach(arg => {
+        if(elements[arg.name]) {
+            //elements[arg.name].value = getSimulate(arg.type, arg.range, arg.name, arg.defaultValue);
+            elements[arg.name].value = localStorage[arg.name] || params[arg.name] || '';
+        }
+    });
+};
+
+// 模拟提交
+exports.simulateSubmit = async function (cat, index){
+    let item = this.interfaceData[cat].methods[index];
+    let reItem = this.reData.filter(x=>x.url===item.url)[0] || {};
+    let url = item.url;
+    let form = document.forms[url];
+    let data = {};
+    [...form.elements]
+        .filter(x => x.name)
+        .forEach(x => {
+            data[x.name] = x.value;
+        });
+    let options = {
+        type: 'POST',
+        url,
+        data,
+        headers : getHeaders(),
+        dataType: "json"
+    };
+    let headers = reItem.headers || {};
+    Object.keys(headers).forEach(key => {
+        options.headers[key] = headers[key];
+    });
+    if (item.isBin) {
+        return submitForm(options);
+    }
+    let rs = await ajax(options);
+    let code = JSON.stringify(rs, null, 4);
+    let objCode = form.querySelector("code");
+    objCode.innerHTML = code;
+    hljs.highlightBlock(objCode);
+    if (rs.data && rs.data.token) {
+        localStorage.token = rs.data.token;
+    }
+    if (rs.data && rs.data.orderId) {
+        localStorage.orderId = rs.data.orderId;
+    }
+};
+
+</script>

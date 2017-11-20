@@ -1,0 +1,126 @@
+<style>
+    .black{
+        color: black;
+    }
+    .green{
+        color: green;
+    }
+    .red{
+        color: red;
+    }
+
+    li>span {
+        float: right;
+        margin-right: 15px;
+    }
+
+    .bar>*{
+        display: inline-block;
+        width: 25%;
+    }
+    .bar>button{
+        width: 20%;
+    }
+    .bar>p{
+        text-align: right;
+    }
+</style>
+
+<template>
+    <div class="box">
+        <div class="bar">
+            <h3>自动化测试({this.data.length}):</h3>
+            <button data-event="reTest">重测</button>
+            <button data-event="againTest">续测</button>
+            <p>总用时: <span class="total-ms"></span></p>
+        </div>
+        <ul class="interface-list">
+            {foreach src=this.data}
+            <li class="black">{item.url}<span></span></li>
+            {/foreach}
+        </ul>
+    </div>
+</template>
+
+<script type="text/ecmascript-6">
+    let ajax = require('sys.ajax');
+    let getHeaders = require('/plugins/getHeaders');
+    let chkSuccess = require('/plugins/chkSuccess');
+    let setParams = require('/plugins/setParams');
+    let setResult = require('/plugins/setResult');
+
+    exports.onInit = async function (done) {
+        this.data = await ajax.get('/config/req-res.json');
+        done();
+    };
+
+    exports.onRender = function () {
+        this.box = this.ui.querySelector('.interface-list');
+        this.index = 0;
+        this.totalMs = 0;
+        localStorage.clear();
+        sessionStorage.clear();
+        this.autoTest();
+    };
+
+    exports.reTest = () => location.reload();
+    exports.againTest = () => exports.autoTest();
+
+    exports.autoTest = async function () {
+        let isPass = await this.chkItem();
+        if (isPass && this.index < this.data.length - 1) {
+            ++this.index;
+            return this.autoTest();
+        }
+        this.ui.querySelector('.total-ms').innerHTML = `${this.totalMs/1000}s`;
+    };
+
+    exports.chkItem = async function () {
+        let t1 = Date.now();
+        let item = this.data[this.index];
+        let rs = await this.simulateSubmit(item);
+        let isPass = chkSuccess(rs, item.url);
+        let t2 = Date.now();
+        let ms = t2 - t1;
+        this.totalMs += ms;
+
+        let li = this.box.children[this.index];
+        li.className = isPass ? 'green' : 'red';
+        li.querySelector('span').innerHTML = `${ms}ms`;
+
+        return isPass;
+    };
+
+    exports.submitForm = function (options) {
+        let form = document.body.querySelector('form#src_form');
+        form.action = options.url;
+        Object.keys(options.data).forEach(key => {
+            let input = document.createElement('input');
+            input.name = key;
+            input.value = options.data[key];
+            form.appendChild(input);
+        });
+        form.submit();
+        form.innerHTML = '';
+        return {code: 200};
+    };
+
+    // 模拟提交
+    exports.simulateSubmit = async function (item){
+        setParams(item.url, item.params);
+        let options = {
+            type: 'POST',
+            url: item.url,
+            data: item.params,
+            headers : Object.assign({}, getHeaders(), item.headers),
+            dataType: "json"
+        };
+
+        if (item.isBin) {
+            return this.submitForm(options);
+        }
+        let rs = await ajax(options);
+        setResult(item.url, rs);
+        return rs;
+    };
+</script>

@@ -1,9 +1,12 @@
 {
   "name": "caad",
-  "version": "1.1.1",
+  "version": "1.2.3",
   "author": "Li",
   "description": "code as a document",
-  "main": "index.js",
+  "main": "./server.js",
+  "bin": {
+    "genData": "./genData.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/likaituan/caad.git"
@@ -16,5 +19,10 @@
   "bugs": {
     "url": "https://github.com/likaituan/caad/issues"
   },
-  "homepage": "https://github.com/likaituan/caad#readme"
+  "homepage": "https://github.com/likaituan/caad#readme",
+  "dependencies": {
+    "http-proxy-middleware": "^0.17.4",
+    "ifun": "^0.2.8",
+    "seek2": "2.5.2"
+  }
 }
