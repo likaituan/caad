@@ -4,11 +4,13 @@
 var proxy = require('http-proxy-middleware');
 
 let setProxy = function (app, ops) {
-	let options = {
-		target: ops.proxyTo
-	};
-	let proxyService = proxy(ops.serverPath, options);
-	app.use(proxyService);
+	Object.keys(ops.proxy).forEach(key => {
+		let options = {
+			target: ops.proxy[key]
+		};
+		let proxyService = proxy(key, options);
+		app.use(proxyService);
+	});
 };
 
 

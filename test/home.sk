@@ -115,6 +115,7 @@
             headers : Object.assign({}, getHeaders(), item.headers),
             dataType: "json"
         };
+        Object.assign(options, item.options || {});
 
         if (item.isBin) {
             return this.submitForm(options);
